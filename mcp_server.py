@@ -11,7 +11,13 @@ import websockets
 load_dotenv()
 
 # Default port setting
-PORT = 3003
+PORT = int(os.getenv('PORT', '3003'))
+
+# MySQL Configuration
+MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
+MYSQL_PORT = int(os.getenv('MYSQL_PORT', '3306'))
+MYSQL_USER = os.getenv('MYSQL_USER')
+MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
 
 async def handle_websocket(websocket, path):
     async for message in websocket:
@@ -36,10 +42,15 @@ async def handle_websocket(websocket, path):
                     "result": {
                         "name": "MySQL MCP Server",
                         "version": "1.0.0",
-                        "status": "initialized"
+                        "status": "initialized",
+                        "config": {
+                            "mysql_host": MYSQL_HOST,
+                            "mysql_port": MYSQL_PORT
+                        }
                     },
                     "id": request_id
                 }
+                await websocket.send(json.dumps(response))
             elif method == "tools/list":
                 tools = [
                     {
@@ -48,11 +59,9 @@ async def handle_websocket(websocket, path):
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "user_id": {"type": "string"},
-                                "password": {"type": "string"},
-                                "database": {"type": "string"}
+                                "database": {"type": "string", "description": "Database name"}
                             },
-                            "required": ["user_id", "password"]
+                            "required": ["database"]
                         }
                     },
                     {
@@ -61,12 +70,10 @@ async def handle_websocket(websocket, path):
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "user_id": {"type": "string"},
-                                "password": {"type": "string"},
-                                "database": {"type": "string"},
-                                "query": {"type": "string"}
+                                "database": {"type": "string", "description": "Database name"},
+                                "query": {"type": "string", "description": "SQL query to execute"}
                             },
-                            "required": ["user_id", "password", "query"]
+                            "required": ["database", "query"]
                         }
                     }
                 ]
@@ -75,6 +82,7 @@ async def handle_websocket(websocket, path):
                     "result": tools,
                     "id": request_id
                 }
+                await websocket.send(json.dumps(response))
             elif method == "tools/call":
                 tool = params.get("tool")
                 tool_params = params.get("params", {})
@@ -89,14 +97,7 @@ async def handle_websocket(websocket, path):
                         "error": {"code": -32601, "message": f"Unknown tool: {tool}"},
                         "id": request_id
                     }
-            else:
-                response = {
-                    "jsonrpc": "2.0",
-                    "error": {"code": -32601, "message": f"Unknown method: {method}"},
-                    "id": request_id
-                }
-            
-            await websocket.send(json.dumps(response))
+                await websocket.send(json.dumps(response))
         except Exception as e:
             error_response = {
                 "jsonrpc": "2.0",
@@ -106,22 +107,21 @@ async def handle_websocket(websocket, path):
             await websocket.send(json.dumps(error_response))
 
 async def handle_list_tables(params, request_id):
-    if "user_id" not in params or "password" not in params:
+    if "database" not in params:
         return {
             "jsonrpc": "2.0",
-            "error": {"code": -32602, "message": "Missing user ID or password"},
+            "error": {"code": -32602, "message": "Missing database parameter"},
             "id": request_id
         }
     
-    db_config = {
-        'user': params['user_id'],
-        'password': params['password'],
-        'host': 'localhost',
-        'database': params.get('database', '')
-    }
-    
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=params["database"]
+        )
         cursor = conn.cursor()
         cursor.execute("SHOW TABLES")
         tables = [table[0] for table in cursor.fetchall()]
@@ -144,22 +144,21 @@ async def handle_list_tables(params, request_id):
             conn.close()
 
 async def handle_query(params, request_id):
-    if "user_id" not in params or "password" not in params or "query" not in params:
+    if "database" not in params or "query" not in params:
         return {
             "jsonrpc": "2.0",
-            "error": {"code": -32602, "message": "Missing user ID, password, or query"},
+            "error": {"code": -32602, "message": "Missing database or query parameter"},
             "id": request_id
         }
     
-    db_config = {
-        'user': params['user_id'],
-        'password': params['password'],
-        'host': 'localhost',
-        'database': params.get('database', '')
-    }
-    
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=params["database"]
+        )
         cursor = conn.cursor(dictionary=True)
         cursor.execute(params["query"])
         results = cursor.fetchall()

@@ -4,11 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3003:3003"
-    environment:
-      - MYSQL_HOST=${MYSQL_HOST:-localhost}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
     configSchema:
       type: "object"
       properties:
@@ -33,7 +28,7 @@ services:
       commandFunction: |
         function getCommand(config) {
           return {
-            command: "python3",
+            command: "python",
             args: ["mcp_server.py"],
             env: {
               "MYSQL_HOST": config.mysql_host || "localhost",
