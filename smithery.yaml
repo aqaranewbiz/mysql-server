@@ -20,17 +20,26 @@ services:
           type: "integer"
           description: "MySQL server port"
           default: 3306
-      required: []
+        mysql_user:
+          type: "string"
+          description: "MySQL user"
+        mysql_password:
+          type: "string"
+          description: "MySQL password"
+          format: "password"
+      required: ["mysql_user", "mysql_password"]
     startCommand:
       type: "stdio"
       commandFunction: |
         function getCommand(config) {
           return {
-            command: "python",
+            command: "python3",
             args: ["mcp_server.py"],
             env: {
               "MYSQL_HOST": config.mysql_host || "localhost",
-              "MYSQL_PORT": config.mysql_port || 3306
+              "MYSQL_PORT": String(config.mysql_port || 3306),
+              "MYSQL_USER": config.mysql_user,
+              "MYSQL_PASSWORD": config.mysql_password
             }
           };
         } 
