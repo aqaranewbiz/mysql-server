@@ -41,26 +41,27 @@ class MCPHandler(BaseHTTPRequestHandler):
         
         method = request.get("method")
         params = request.get("params", {})
+        request_id = request.get("id")
         
         if method == "initialize":
-            return self.handle_initialize(params)
+            return self.handle_initialize(params, request_id)
         elif method == "tools/list":
-            return self.handle_tools_list(params)
+            return self.handle_tools_list(params, request_id)
         elif method == "tools/call":
-            return self.handle_tools_call(params)
+            return self.handle_tools_call(params, request_id)
         else:
             return self._handle_error(400, f"Unknown method: {method}")
     
-    def handle_initialize(self, params):
+    def handle_initialize(self, params, request_id):
         self._set_headers()
         response = {
             "jsonrpc": "2.0",
             "result": "MCP server initialized",
-            "id": params.get("id")
+            "id": request_id
         }
         self.wfile.write(json.dumps(response).encode())
     
-    def handle_tools_list(self, params):
+    def handle_tools_list(self, params, request_id):
         self._set_headers()
         tools = [
             {"name": "list_tables", "description": "List all tables in the database"},
@@ -69,22 +70,22 @@ class MCPHandler(BaseHTTPRequestHandler):
         response = {
             "jsonrpc": "2.0",
             "result": tools,
-            "id": params.get("id")
+            "id": request_id
         }
         self.wfile.write(json.dumps(response).encode())
     
-    def handle_tools_call(self, params):
+    def handle_tools_call(self, params, request_id):
         tool = params.get("tool")
         tool_params = params.get("params", {})
         
         if tool == "list_tables":
-            return self.handle_list_tables(tool_params)
+            return self.handle_list_tables(tool_params, request_id)
         elif tool == "query":
-            return self.handle_query(tool_params)
+            return self.handle_query(tool_params, request_id)
         else:
             return self._handle_error(400, f"Unknown tool: {tool}")
     
-    def handle_list_tables(self, params):
+    def handle_list_tables(self, params, request_id):
         if "user_id" not in params or "password" not in params:
             return self._handle_error(400, "Missing user ID or password")
         
@@ -106,7 +107,7 @@ class MCPHandler(BaseHTTPRequestHandler):
             response = {
                 "jsonrpc": "2.0",
                 "result": {"tables": tables},
-                "id": params.get("id")
+                "id": request_id
             }
             self.wfile.write(json.dumps(response).encode())
             
@@ -118,7 +119,7 @@ class MCPHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
     
-    def handle_query(self, params):
+    def handle_query(self, params, request_id):
         if "user_id" not in params or "password" not in params or "query" not in params:
             return self._handle_error(400, "Missing user ID, password, or query")
         
@@ -140,7 +141,7 @@ class MCPHandler(BaseHTTPRequestHandler):
             response = {
                 "jsonrpc": "2.0",
                 "result": {"results": results},
-                "id": params.get("id")
+                "id": request_id
             }
             self.wfile.write(json.dumps(response).encode())
             

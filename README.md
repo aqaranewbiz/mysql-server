@@ -48,3 +48,16 @@ This is a simple MySQL MCP server that allows users to list tables and execute q
 
 ## License
 This project is licensed under the MIT License. 
+
+## smithery.yaml
+```
+version: '1.0'
+services:
+  mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      SMITHERY_API_KEY: ${SMITHERY_API_KEY} 
