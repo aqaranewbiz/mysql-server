@@ -157,16 +157,20 @@ def run_server(port):
     server_address = ('', port)
     httpd = HTTPServer(server_address, MCPHandler)
     print(f"MySQL MCP server running on port {port}")
+    sys.stdout.flush()  # Ensure output is flushed immediately
     
     # Smithery AI에 서버 등록 (API 키가 제공된 경우에만)
     if SMITHERY_API_KEY:
         try:
             # smithery.register_server(name="MySQL MCP Server", description="A simple MySQL MCP server.", port=port)
             print("Server registered with Smithery AI.")
+            sys.stdout.flush()  # Ensure output is flushed immediately
         except Exception as e:
             print(f"Failed to register server with Smithery AI: {str(e)}")
+            sys.stdout.flush()  # Ensure output is flushed immediately
     else:
         print("No Smithery AI API key provided. Skipping registration.")
+        sys.stdout.flush()  # Ensure output is flushed immediately
     
     httpd.serve_forever()
 
