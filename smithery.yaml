@@ -1,0 +1,36 @@
+version: '1.0'
+services:
+  mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-localhost}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+    configSchema:
+      type: "object"
+      properties:
+        mysql_host:
+          type: "string"
+          description: "MySQL server host"
+          default: "localhost"
+        mysql_port:
+          type: "integer"
+          description: "MySQL server port"
+          default: 3306
+      required: []
+    startCommand:
+      type: "stdio"
+      commandFunction: |
+        function getCommand(config) {
+          return {
+            command: "python",
+            args: ["mcp_server.py"],
+            env: {
+              "MYSQL_HOST": config.mysql_host || "localhost",
+              "MYSQL_PORT": config.mysql_port || 3306
+            }
+          };
+        } 
