@@ -19,7 +19,7 @@ SMITHERY_API_KEY = os.getenv('SMITHERY_API_KEY')
 
 # 커맨드 라인에서 포트 받기
 if len(sys.argv) > 1:
-    PORT = int(sys.argv[1])
+    port = int(sys.argv[1])
 
 class MCPHandler(BaseHTTPRequestHandler):
     def _set_headers(self, content_type="application/json"):
@@ -197,7 +197,7 @@ async def run_websocket_server(port):
 
 if __name__ == "__main__":
     port = PORT
-    if len(sys.stderr) > 1:
+    if len(sys.argv) > 1:
         port = int(sys.argv[1])
     
     # Run the WebSocket server
