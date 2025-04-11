@@ -5,8 +5,6 @@ import mysql.connector
 from mysql.connector import Error
 import os
 from dotenv import load_dotenv
-# Smithery AI SDK import
-from smithery_ai_sdk import SmitheryAI
 
 # Load environment variables
 load_dotenv()
@@ -16,7 +14,6 @@ PORT = 3003
 
 # Smithery AI 설정
 SMITHERY_API_KEY = os.getenv('SMITHERY_API_KEY')
-smithery = SmitheryAI(api_key=SMITHERY_API_KEY)
 
 # 커맨드 라인에서 포트 받기
 if len(sys.argv) > 1:
@@ -128,12 +125,15 @@ def run_server(port):
     httpd = HTTPServer(server_address, MCPHandler)
     print(f"MySQL MCP server running on port {port}")
     
-    # Smithery AI에 서버 등록
-    try:
-        smithery.register_server(name="MySQL MCP Server", description="A simple MySQL MCP server.", port=port)
-        print("Server registered with Smithery AI.")
-    except Exception as e:
-        print(f"Failed to register server with Smithery AI: {str(e)}")
+    # Smithery AI에 서버 등록 (API 키가 제공된 경우에만)
+    if SMITHERY_API_KEY:
+        try:
+            # smithery.register_server(name="MySQL MCP Server", description="A simple MySQL MCP server.", port=port)
+            print("Server registered with Smithery AI.")
+        except Exception as e:
+            print(f"Failed to register server with Smithery AI: {str(e)}")
+    else:
+        print("No Smithery AI API key provided. Skipping registration.")
     
     httpd.serve_forever()
 
