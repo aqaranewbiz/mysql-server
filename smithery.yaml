@@ -1,16 +1,45 @@
-version: '1.0'
-build:
-  dockerfile: Dockerfile
+version: '1'
 configSchema:
   type: "object"
-  properties: {}
-  required: []
+  properties:
+    mysql_host:
+      type: "string"
+      description: "MySQL server host"
+      default: "localhost"
+    mysql_port:
+      type: "integer"
+      description: "MySQL server port"
+      default: 3306
+    mysql_user:
+      type: "string"
+      description: "MySQL username"
+    mysql_password:
+      type: "string"
+      description: "MySQL password"
+      format: "password"
+    mysql_database:
+      type: "string"
+      description: "Default MySQL database"
+    server_type:
+      type: "string"
+      description: "Server type to run (websocket or http)"
+      enum: ["websocket", "http"]
+      default: "http"
+  required: ["mysql_user", "mysql_password"]
 startCommand:
-  type: "stdio"
+  type: 'stdio'
   commandFunction: |
     function getCommand(config) {
+      const serverScript = config.server_type === "http" ? "mcp_mysql_server.py" : "mcp_server.py";
       return {
-        command: "python",
-        args: ["mcp_server.py"]
+        command: 'python',
+        args: [serverScript],
+        env: {
+          "MYSQL_HOST": config.mysql_host || "localhost",
+          "MYSQL_PORT": String(config.mysql_port || 3306),
+          "MYSQL_USER": config.mysql_user,
+          "MYSQL_PASSWORD": config.mysql_password,
+          "MYSQL_DATABASE": config.mysql_database || ""
+        }
       };
     } 
