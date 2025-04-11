@@ -1,20 +1,18 @@
-# Use the official Python image from the Docker Hub
+# Use a minimal Python image
 FROM python:3.9-slim
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-
-# Install any needed packages specified in requirements.txt
+# Copy requirements and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 3003 available to the world outside this container
+# Copy the application code
+COPY . .
+
+# Expose the port the app runs on
 EXPOSE 3003
 
-# Define environment variable
-ENV NAME MCP_Server
-
-# Run mcp_server.py when the container launches
+# Command to run the application
 CMD ["python", "mcp_server.py"] 

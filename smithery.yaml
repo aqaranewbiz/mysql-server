@@ -3,35 +3,14 @@ build:
   dockerfile: Dockerfile
 configSchema:
   type: "object"
-  properties:
-    mysql_host:
-      type: "string"
-      description: "MySQL server host"
-      default: "localhost"
-    mysql_port:
-      type: "integer"
-      description: "MySQL server port"
-      default: 3306
-    mysql_user:
-      type: "string"
-      description: "MySQL user"
-    mysql_password:
-      type: "string"
-      description: "MySQL password"
-      format: "password"
-  required: ["mysql_user", "mysql_password"]
+  properties: {}
+  required: []
 startCommand:
   type: "stdio"
   commandFunction: |
     function getCommand(config) {
       return {
         command: "python",
-        args: ["mcp_server.py"],
-        env: {
-          "MYSQL_HOST": config.mysql_host || "localhost",
-          "MYSQL_PORT": String(config.mysql_port || 3306),
-          "MYSQL_USER": config.mysql_user,
-          "MYSQL_PASSWORD": config.mysql_password
-        }
+        args: ["mcp_server.py"]
       };
     } 
