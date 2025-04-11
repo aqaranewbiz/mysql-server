@@ -5,6 +5,8 @@ import mysql.connector
 from mysql.connector import Error
 import os
 from dotenv import load_dotenv
+import asyncio
+import websockets
 
 # Load environment variables
 load_dotenv()
@@ -153,29 +155,50 @@ class MCPHandler(BaseHTTPRequestHandler):
             if 'conn' in locals():
                 conn.close()
 
-def run_server(port):
-    server_address = ('0.0.0.0', port)  # Bind to all interfaces
-    httpd = HTTPServer(server_address, MCPHandler)
-    print(f"MySQL MCP server running on port {port}", file=sys.stderr)
-    sys.stderr.flush()  # Ensure output is flushed immediately
-    
-    # Smithery AI에 서버 등록 (API 키가 제공된 경우에만)
-    if SMITHERY_API_KEY:
-        try:
-            # smithery.register_server(name="MySQL MCP Server", description="A simple MySQL MCP server.", port=port)
-            print("Server registered with Smithery AI.", file=sys.stderr)
-            sys.stderr.flush()  # Ensure output is flushed immediately
-        except Exception as e:
-            print(f"Failed to register server with Smithery AI: {str(e)}", file=sys.stderr)
-            sys.stderr.flush()  # Ensure output is flushed immediately
-    else:
-        print("No Smithery AI API key provided. Skipping registration.", file=sys.stderr)
-        sys.stderr.flush()  # Ensure output is flushed immediately
-    
-    httpd.serve_forever()
+async def handle_websocket(websocket, path):
+    async for message in websocket:
+        request = json.loads(message)
+        if "jsonrpc" not in request or request["jsonrpc"] != "2.0":
+            response = json.dumps({"error": "Invalid JSON-RPC version"})
+            await websocket.send(response)
+            continue
+        
+        method = request.get("method")
+        params = request.get("params", {})
+        request_id = request.get("id")
+        
+        if method == "initialize":
+            response = json.dumps({
+                "jsonrpc": "2.0",
+                "result": "MCP server initialized",
+                "id": request_id
+            })
+            await websocket.send(response)
+        elif method == "tools/list":
+            tools = [
+                {"name": "list_tables", "description": "List all tables in the database"},
+                {"name": "query", "description": "Execute a SQL query"}
+            ]
+            response = json.dumps({
+                "jsonrpc": "2.0",
+                "result": tools,
+                "id": request_id
+            })
+            await websocket.send(response)
+        else:
+            response = json.dumps({"error": f"Unknown method: {method}"})
+            await websocket.send(response)
+
+async def run_websocket_server(port):
+    async with websockets.serve(handle_websocket, "0.0.0.0", port):
+        print(f"WebSocket server running on port {port}", file=sys.stderr)
+        sys.stderr.flush()
+        await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
     port = PORT
-    if len(sys.argv) > 1:
+    if len(sys.stderr) > 1:
         port = int(sys.argv[1])
-    run_server(port) 
+    
+    # Run the WebSocket server
+    asyncio.run(run_websocket_server(port)) 
