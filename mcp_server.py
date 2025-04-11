@@ -154,7 +154,7 @@ class MCPHandler(BaseHTTPRequestHandler):
                 conn.close()
 
 def run_server(port):
-    server_address = ('', port)
+    server_address = ('0.0.0.0', port)  # Bind to all interfaces
     httpd = HTTPServer(server_address, MCPHandler)
     print(f"MySQL MCP server running on port {port}", file=sys.stderr)
     sys.stderr.flush()  # Ensure output is flushed immediately
