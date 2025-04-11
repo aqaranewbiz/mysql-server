@@ -190,15 +190,23 @@ async def handle_websocket(websocket, path):
             await websocket.send(response)
 
 async def run_websocket_server(port):
-    async with websockets.serve(handle_websocket, "0.0.0.0", port):
-        print(f"WebSocket server running on port {port}", file=sys.stderr)
+    try:
+        async with websockets.serve(handle_websocket, "0.0.0.0", port):
+            print(f"WebSocket server running on port {port}", file=sys.stderr)
+            sys.stderr.flush()
+            await asyncio.Future()  # Run forever
+    except Exception as e:
+        print(f"Error starting WebSocket server: {str(e)}", file=sys.stderr)
         sys.stderr.flush()
-        await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
-    port = PORT
-    if len(sys.argv) > 1:
-        port = int(sys.argv[1])
-    
-    # Run the WebSocket server
-    asyncio.run(run_websocket_server(port)) 
+    try:
+        port = PORT
+        if len(sys.argv) > 1:
+            port = int(sys.argv[1])
+        
+        # Run the WebSocket server
+        asyncio.run(run_websocket_server(port))
+    except Exception as e:
+        print(f"Failed to run WebSocket server: {str(e)}", file=sys.stderr)
+        sys.stderr.flush() 
